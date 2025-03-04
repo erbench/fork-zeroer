@@ -440,6 +440,7 @@ class ZeroerModel:
 
         convergence = ConvergenceMeter(10, 0.01, diff_fn=lambda a, b: np.linalg.norm(a - b))
         results = []
+        t_start = time.process_time()
         with tqdm(range(max_iter)) as pbar:
             t_iter = time.process_time()
             for iteration in pbar:
@@ -478,6 +479,10 @@ class ZeroerModel:
                             f1, p, r))
                     pbar.set_description_str(result_str)
                     results += [[iteration, f1, p, r, t_stop-t_iter]]
+
+                if (t_stop - t_start) + (t_stop - t_iter) > 8 * 60 * 60:  # if running the next epoch would lead to a total runtime
+                    # higher than 8 hours, break.
+                    break
 
         return model, model.P_M, results
 
