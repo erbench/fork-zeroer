@@ -442,8 +442,8 @@ class ZeroerModel:
         results = []
         t_start = time.process_time()
         with tqdm(range(max_iter)) as pbar:
-            t_iter = time.process_time()
             for iteration in pbar:
+                t_iter = time.process_time()
                 model.e_step()
                 if run_trans:
                     if LR_dup_free==False and LR_identical==False:
@@ -462,7 +462,7 @@ class ZeroerModel:
                     model_l.m_step()
 
                 convergence.offer(model.free_energy())
-                t_stop = time.process_time()
+                t_run = time.process_time()
 
                 if convergence.is_converged:
                     break
@@ -478,9 +478,10 @@ class ZeroerModel:
                             np.linalg.norm(model.P_M),
                             f1, p, r))
                     pbar.set_description_str(result_str)
-                    results += [[iteration, f1, p, r, t_stop-t_iter]]
+                    t_eval = time.process_time()
+                    results += [[iteration, f1, p, r, t_run-t_iter, t_eval-t_run]]
 
-                if (t_stop - t_start) + (t_stop - t_iter) > 8 * 60 * 60:  # if running the next epoch would lead to a total runtime
+                if (t_run - t_start) + (t_run - t_iter) > 8 * 60 * 60:  # if running the next epoch would lead to a total runtime
                     # higher than 8 hours, break.
                     break
 
