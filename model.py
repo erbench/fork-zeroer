@@ -25,6 +25,26 @@ def get_y_init_given_threshold(similarity_features_df, threshold=0.8):
     scaled_sum = getScaledSum(x_scaled)
     training_labels_ = scaled_sum > threshold
     y_init = [int(val) for val in training_labels_]
+    new_threshold = threshold
+    while sum(y_init) < 2:
+        new_threshold -= 0.05
+        if new_threshold <= 0:
+            print('No initial labels found, to few positives')
+            break
+        training_labels_ = scaled_sum > new_threshold
+        y_init = [int(val) for val in training_labels_]
+
+
+    while sum(y_init) > len(y_init)-2:
+        new_threshold += 0.05
+        if new_threshold >= 1:
+            print('No initial labels found, to many positives')
+            break
+        training_labels_ = scaled_sum > new_threshold
+        y_init = [int(val) for val in training_labels_]
+
+
+    print(sum(y_init), new_threshold)
     return y_init
 
 
@@ -223,7 +243,7 @@ class ZeroerModel:
 
 
         P_M_test = pi_M / (pi_M + pi_U * prob_non_dup_over_dup)
-        P_M_test = np.clip(P_M_test, 0., 1.)
+        P_M_test = np.clip(P_M_test + DEL, 0., 1.)
         return P_M_test
 
     def enforce_transitivity(self, P_M, ids, id_tuple_to_index, model_l, model_r,LR_dup_free=False,LR_identical=False):
@@ -440,10 +460,10 @@ class ZeroerModel:
 
         convergence = ConvergenceMeter(10, 0.01, diff_fn=lambda a, b: np.linalg.norm(a - b))
         results = []
-        t_start = time.process_time()
+        t_start = time.perf_counter()
         with tqdm(range(max_iter)) as pbar:
             for iteration in pbar:
-                t_iter = time.process_time()
+                t_iter = time.perf_counter()
                 model.e_step()
                 if run_trans:
                     if LR_dup_free==False and LR_identical==False:
@@ -462,7 +482,7 @@ class ZeroerModel:
                     model_l.m_step()
 
                 convergence.offer(model.free_energy())
-                t_run = time.process_time()
+                t_run = time.perf_counter()
 
                 if convergence.is_converged:
                     break
@@ -478,7 +498,7 @@ class ZeroerModel:
                             np.linalg.norm(model.P_M),
                             f1, p, r))
                     pbar.set_description_str(result_str)
-                    t_eval = time.process_time()
+                    t_eval = time.perf_counter()
                     results += [[iteration, f1, p, r, t_run-t_iter, t_eval-t_run]]
 
                 if (t_run - t_start) + (t_run - t_iter) > 8 * 60 * 60:  # if running the next epoch would lead to a total runtime

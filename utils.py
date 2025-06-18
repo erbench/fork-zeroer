@@ -34,4 +34,4 @@ def run_zeroer(similarity_features_df, similarity_features_lr,id_dfs,true_labels
         p, r, f1 = get_results(true_labels, np.round(np.clip(y_pred + DEL, 0., 1.)).astype(int))
         print("Results after EM:")
         print("F1: {:0.2f}, Precision: {:0.2f}, Recall: {:0.2f}".format(f1, p, r))
-    return y_pred, results
+    return y_pred, results, model
